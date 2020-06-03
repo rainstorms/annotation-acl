@@ -1,0 +1,10 @@
+# either set server.port as system property using command line option to jvm -Dserver.port=6583
+# java -Dserver.port=6583 -jar target/activity-server-1.0.jar
+# java -jar target/activity-server-1.0.jar --server.port=6583
+server:
+  port: 6583
+  servlet:
+    contextPath: /annotation-acl
+  error:
+    whitelabel:
+      enabled: false
