@@ -3,10 +3,13 @@ package com.github.rainstorms.exception;
 import com.github.rainstorms.aclInterface.AclLogin;
 import com.github.rainstorms.aclInterface.AclUserService;
 import com.github.rainstorms.annotation.Acl;
+import com.github.rainstorms.annotation.LoginIgnore;
 import com.github.rainstorms.domain.AclContext;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.boot.autoconfigure.web.servlet.error.BasicErrorController;
@@ -19,34 +22,28 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-@Slf4j
-@Builder
+@Slf4j @Data @AllArgsConstructor @NoArgsConstructor
 public class AclInterceptor implements HandlerInterceptor {
-    private AclLogin[] aclLogins;
-    private AclUserService userService;
+    public AclLogin[] aclLogins;
+    public AclUserService userService;
 
     @Override
     public boolean preHandle(HttpServletRequest req, HttpServletResponse rsp, Object handler) {
         for (val aclLogin : aclLogins) {
-            switch (aclLogin.login(req, rsp, userService)) {
-                case ContinueNext:
-                    continue;
-                case BreakTrue:
-                    return true;
-                case BreakFalse:
-                    return false;
-            }
+            if (aclLogin.login(userService, req, rsp)) // 登录成功
+                return authenticate(req, handler); // 进行权限校验
         }
 
-        return authenticate(req, handler);
+        return false;
     }
 
     /**
+     * 认证、进行权限校验
      * 处理acl注解
      *
      * @param r
      * @param h
-     * @return
+     * @return false:不能访问也不处理，true:代表可以访问，异常:告诉不能访问的原因
      */
     private boolean authenticate(HttpServletRequest r, Object h) {
         if (r.getServletPath().startsWith("/error"))
@@ -55,10 +52,13 @@ public class AclInterceptor implements HandlerInterceptor {
         if (!(h instanceof HandlerMethod)) return false;
 
         val handlerMethod = (HandlerMethod) h;
-        if (handlerMethod.getMethod().getDeclaringClass() == BasicErrorController.class)
+        Method method = handlerMethod.getMethod();
+        if (method.getDeclaringClass() == BasicErrorController.class)
             return false;
 
-        val acl = getAcl(handlerMethod.getMethod());
+        if (method.getAnnotation(LoginIgnore.class) != null) return true;
+
+        val acl = getAcl(method);
         if (acl == null) return true;
 
         if (!AclContext.isLogined())
@@ -93,7 +93,25 @@ public class AclInterceptor implements HandlerInterceptor {
         return strList.toArray(new String[0]);
     }
 
+//    @Autowired AclService aclService;
+
     private Acl getAcl(Method method) {
+//        val roleNames = aclService.findAcl(method);
+//        if (roleNames != null) return new Acl() {
+//            @Override public Class<? extends Annotation> annotationType() {
+//                return Acl.class;
+//            }
+//
+//            @Override public String[] roles() {
+//                return Iterables.toArray(splitter.split(roleNames), String.class);
+//            }
+//
+////            @Override public Login login() {
+////                return Login.登录;
+////            }
+//
+//        };
+
         val acl = method.getAnnotation(Acl.class);
         if (acl != null) return acl;
 

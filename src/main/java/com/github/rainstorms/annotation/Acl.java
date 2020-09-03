@@ -7,10 +7,10 @@ import java.lang.annotation.Target;
 
 /**
  * 访问控制注解。
- *
+ * <p>
  * 不加就代表不校验，代表任何角色都可以访问。
  */
-@Target({ElementType.TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Acl {
     /**

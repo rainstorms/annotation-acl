@@ -13,7 +13,8 @@ import java.time.LocalDate;
 
 @Slf4j
 public class AclCookies {
-    public static final String AUTHC = "acl-authc";
+    public static final String AUTHC = "wxtv-staff-authc";
+//    public static final String AUTHC = "acl-authc";
     public static final String AesKey = "8o73LQEsp3VYfdlmTLJiZQ";
 
 
